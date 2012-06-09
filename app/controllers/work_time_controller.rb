@@ -984,28 +984,34 @@ private
     t2 = Time.local(next_date.year, next_date.month, next_date.day)
     issues = Issue.find(:all, :conditions=>["author_id=:u and created_on>=:t1 and created_on<:t2",
         {:u=>@this_uid, :t1=>t1, :t2=>t2}])
-    issues.each do |issue|
-      next if @restrict_project && @restrict_project!=issue.project.id
-      next if !@this_user.allowed_to?(:log_time, issue.project)
-      next if issue.nil? || !issue.visible?
-      prj_pack = make_pack_prj(@day_pack, issue.project)
-      issue_pack = make_pack_issue(prj_pack, issue)
-      issue_pack[:worked] = true;
-    end
-    # この日のチケット操作を洗い出す
-    issues = Issue.find(:all, :joins=>"INNER JOIN journals ON journals.journalized_id=issues.id",
+
+    if issues.count > 0 then
+      issues.each do |issue|
+        next if @restrict_project && @restrict_project!=issue.project.id
+        next if !@this_user.allowed_to?(:log_time, issue.project)
+        next if issue.nil? || !issue.visible?
+        prj_pack = make_pack_prj(@day_pack, issue.project)
+        issue_pack = make_pack_issue(prj_pack, issue)
+        issue_pack[:worked] = true;
+      end
+    
+      # この日のチケット操作を洗い出す
+      issues = Issue.find(:all, :joins=>"INNER JOIN journals ON journals.journalized_id=issues.id",
                         :conditions=>["journals.journalized_type='Issue' and
                                        journals.user_id=:u and
                                        journals.created_on>=:t1 and
                                        journals.created_on<:t2",
                                        {:u=>@this_uid, :t1=>t1, :t2=>t2}])
-    issues.each do |issue|
-      next if @restrict_project && @restrict_project!=issue.project.id
-      next if !@this_user.allowed_to?(:log_time, issue.project)
-      next if !issue.visible?
-      prj_pack = make_pack_prj(@day_pack, issue.project)
-      issue_pack = make_pack_issue(prj_pack, issue)
-      issue_pack[:worked] = true;
+
+    
+      issues.each do |issue|
+        next if @restrict_project && @restrict_project!=issue.project.id
+        next if !@this_user.allowed_to?(:log_time, issue.project)
+        next if !issue.visible?
+        prj_pack = make_pack_prj(@day_pack, issue.project)
+        issue_pack = make_pack_issue(prj_pack, issue)
+        issue_pack[:worked] = true;
+      end
     end
 
     # 月間工数表から工数が無かった項目の削除と項目数のカウント
